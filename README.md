@@ -42,3 +42,7 @@ This is currently very rough. It was tested on an Ubuntu 12.04 system but no gua
  -  Put configuration file somewhere other than the WAR file
  -  Proper build script
  -  Incoming faxes
+
+
+## Credits
+Asterisk dialplan: http://www.geeklab.info/2011/06/an-asterisk-1-8-fax-server/
