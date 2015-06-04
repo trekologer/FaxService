@@ -24,13 +24,14 @@ package net.trekologer.fax.servlet;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.trekologer.fax.processor.AsteriskFaxWorker;
 
 public class FaxServiceServletContextListener implements ServletContextListener {
 
-	private static final Logger LOG = Logger.getLogger(FaxServiceServletContextListener.class);
+	private static final Logger LOG = LoggerFactory.getLogger(FaxServiceServletContextListener.class);
 	private AsteriskFaxWorker worker;
 	private Thread workerThread;
 	
@@ -41,8 +42,8 @@ public class FaxServiceServletContextListener implements ServletContextListener 
 			workerThread.interrupt();
 		} catch(Exception e) {
 			// if we catch an exception on shutdown, do we care?
-			LOG.debug(e);
-			LOG.error("Exception Occurred: "+e.getMessage());
+			LOG.debug("contextDestroyed()", e);
+			LOG.error("Exception Occurred: " + e.getMessage());
 		}
 		
 	}

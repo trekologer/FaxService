@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.data.Status;
@@ -36,7 +37,7 @@ import net.trekologer.fax.util.ServiceProperties;
 
 public class AsteriskFaxProcessor {
 	
-	private static final Logger LOG = Logger.getLogger(AsteriskFaxProcessor.class);
+	private static final Logger LOG = LoggerFactory.getLogger(AsteriskFaxProcessor.class);
 	
 	private static final int DEFAULT_MAX_RETRIES = 3;
 	private static final int DEFAULT_CALL_RETRY_TIME = 60;
@@ -59,7 +60,7 @@ public class AsteriskFaxProcessor {
 			
 			faxJob.setStatus(Status.SUBMITTED);
 		} catch(IOException e) {
-			LOG.error(e);
+			LOG.debug("process()", e);
 			LOG.error("Unable to write asterisk call file: "+e.getMessage());
 			// File write failed
 			faxJob.setStatus(Status.FAILED);

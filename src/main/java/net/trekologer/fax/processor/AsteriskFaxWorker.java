@@ -30,11 +30,12 @@ import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.util.Constants;
 import net.trekologer.fax.util.ServiceProperties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsteriskFaxWorker implements Runnable {
 
-	private static Logger LOG = Logger.getLogger(AsteriskFaxWorker.class);
+	private static Logger LOG = LoggerFactory.getLogger(AsteriskFaxWorker.class);
 	
 	private boolean run = true;
 	
@@ -52,7 +53,7 @@ public class AsteriskFaxWorker implements Runnable {
 			try {
 				job = FaxQueue.getInstance().takeJob();
 			} catch(Exception e) {
-				LOG.error(e);
+				LOG.debug("run()", e);
 				LOG.error("Exception occurred when taking job: "+e.getMessage());
 			}
 			
@@ -76,7 +77,7 @@ public class AsteriskFaxWorker implements Runnable {
 					try {
 						Thread.sleep(ServiceProperties.getInt(Constants.ASTERISK_LICENSE_WAIT_SLEEP_TIME, DEEFAULT_LICENSE_WAIT_SLEEP_TIME));
 					} catch (InterruptedException e) {
-						LOG.debug(e);
+						LOG.debug("run()", e);
 					}
 					
 				}
@@ -88,7 +89,7 @@ public class AsteriskFaxWorker implements Runnable {
 				// is still setting up call for current job
 				Thread.sleep(ServiceProperties.getInt(Constants.ASTERISK_SUBMIT_SLEEP_TIME, DEFAULT_SUMBIT_SLEEP_TIME));
 			} catch(InterruptedException e) {
-				LOG.debug(e);
+				LOG.debug("run()", e);
 			}
 			
 		}
@@ -128,7 +129,7 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
+			LOG.debug("getFaxLicenses()", e);
 			LOG.error("getFaxLicenses exception occurred: "+e.getMessage());
 		}
 		
@@ -166,7 +167,7 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
+			LOG.debug("getFaxSessions()", e);
 			LOG.error("getFaxSessions exception occurred: "+e.getMessage());
 		}
 		
@@ -204,7 +205,7 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
+			LOG.debug("getChannels()", e);
 			LOG.error("getChannels exception occurred: "+e.getMessage());
 		}
 		

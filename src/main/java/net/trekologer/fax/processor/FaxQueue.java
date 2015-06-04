@@ -24,7 +24,8 @@ package net.trekologer.fax.processor;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.exception.FaxServiceException;
@@ -33,7 +34,7 @@ import net.trekologer.fax.util.ServiceProperties;
 
 public class FaxQueue {
 
-	private static final Logger LOG = Logger.getLogger(FaxQueue.class);
+	private static final Logger LOG = LoggerFactory.getLogger(FaxQueue.class);
 	
 	private static FaxQueue instance;
 	private static BlockingQueue<FaxJob> workQueue;
@@ -61,9 +62,10 @@ public class FaxQueue {
 		try {
 			return workQueue.add(job);
 		} catch(IllegalStateException e) {
-			LOG.debug(e);
+			LOG.debug("addJob()", e);
 			LOG.error("Exception Occurred: "+e.getMessage());
-			throw new FaxServiceException(e.getMessage(), 503);
+			// TODO -- make this a 503
+			throw new FaxServiceException(e.getMessage());
 		}
 	}
 	
@@ -78,7 +80,7 @@ public class FaxQueue {
 			return workQueue.take();
 		} catch(InterruptedException e) {
 			// if we are interrupted, we are shutting down
-			LOG.debug(e);
+			LOG.debug("takeJob()", e);
 			LOG.info("Exception Occurred: "+e.getMessage());
 			throw new FaxServiceException(e.getMessage());
 		}
