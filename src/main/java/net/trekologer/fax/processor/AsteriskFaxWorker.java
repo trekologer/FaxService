@@ -40,6 +40,9 @@ public class AsteriskFaxWorker implements Runnable {
 	@Autowired
 	private AsteriskFaxProcessor processor;
 
+	@Autowired
+	private FaxQueue queue;
+
 	@Value("${asterisk.script.path:/opt/faxservice/scripts}")
 	private String asteriskScriptPath;
 
@@ -66,12 +69,12 @@ public class AsteriskFaxWorker implements Runnable {
 	public void run() {
 		LOG.info("Startup");
 		
-		while(run) {
-			LOG.debug("Waiting for job");
+		while(true) {
+			LOG.info("Waiting for job");
 			
 			FaxJob job = null;
 			try {
-				job = FaxQueue.getInstance().takeJob();
+				job = queue.takeJob();
 			} catch(Exception e) {
 				LOG.debug("run()", e);
 				LOG.error("Exception occurred when taking job: " + e.getMessage());

@@ -29,27 +29,29 @@ import org.slf4j.LoggerFactory;
 
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.exception.FaxServiceException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
-public class FaxQueue {
+import javax.annotation.PostConstruct;
+
+@Component
+public class FaxQueue implements InitializingBean {
 
 	@Value("${queue.size:10}")
 	private int queueSize;
 
 	private static final Logger LOG = LoggerFactory.getLogger(FaxQueue.class);
-	
-	private static FaxQueue instance;
+
 	private static BlockingQueue<FaxJob> workQueue;
-	
-	private FaxQueue() {
-		workQueue = new LinkedBlockingQueue<FaxJob>(queueSize);
-	}
-	
-	public static FaxQueue getInstance() {
-		if(instance == null) {
-			instance = new FaxQueue();
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		if(workQueue == null) {
+			LOG.info("Creating queue with size " + queueSize);
+			workQueue = new LinkedBlockingQueue<FaxJob>(queueSize);
 		}
-		return instance;
 	}
 	
 	/**
@@ -76,6 +78,8 @@ public class FaxQueue {
 	 * @throws FaxServiceException if interrupted
 	 */
 	public FaxJob takeJob() throws FaxServiceException {
+		LOG.debug("takeJob() invoked");
+
 		try {
 			return workQueue.take();
 		} catch(InterruptedException e) {

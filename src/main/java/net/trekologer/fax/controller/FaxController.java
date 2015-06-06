@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 
 
@@ -42,7 +41,6 @@ import java.util.Collection;
  * Created by adb on 6/2/15.
  */
 @RestController
-@RequestMapping("/fax")
 public class FaxController {
 
     @Autowired
@@ -50,9 +48,9 @@ public class FaxController {
     private static Logger LOG = LoggerFactory.getLogger(FaxController.class);
 
     @RequestMapping(
-            value="/",
+            value="/fax",
             method= RequestMethod.GET,
-            produces={MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
+            produces=MediaType.APPLICATION_JSON_VALUE
     )
     public Collection<FaxJob> getJobs() {
 
@@ -68,10 +66,10 @@ public class FaxController {
     }
 
     @RequestMapping(
-            value="/",
+            value="/fax",
             method= RequestMethod.POST,
             consumes=MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces={MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
+            produces=MediaType.APPLICATION_JSON_VALUE
     )
     public FaxJob createJob(
             @RequestParam("toPhoneNumber") String toPhoneNumber,
@@ -101,9 +99,9 @@ public class FaxController {
     }
 
     @RequestMapping(
-            value="/{jobId}",
+            value="/fax/{jobId}",
             method= RequestMethod.GET,
-            produces={MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
+            produces=MediaType.APPLICATION_JSON_VALUE
     )
     public FaxJob getJob(@PathVariable("jobId") String jobId) {
 
@@ -119,7 +117,7 @@ public class FaxController {
     }
 
     @RequestMapping(
-            value="/{jobId}",
+            value="/fax/{jobId}",
             method= RequestMethod.DELETE
     )
     public void deleteJob(@PathVariable("jobId") String jobId) {
@@ -130,7 +128,7 @@ public class FaxController {
     }
 
     @RequestMapping(
-            value="/{jobId}/status",
+            value="/fax/{jobId}/status",
             method= RequestMethod.GET,
             produces=MediaType.TEXT_PLAIN_VALUE
     )
@@ -148,7 +146,7 @@ public class FaxController {
     }
 
     @RequestMapping(
-            value="/{jobId}/status",
+            value="/fax/{jobId}/status",
             method= RequestMethod.POST,
             produces=MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )

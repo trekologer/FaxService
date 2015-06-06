@@ -55,6 +55,8 @@ public class FaxServiceImpl implements FaxService {
 	@Autowired
 	private FileConverter fileConverter;
 
+	@Autowired
+	private FaxQueue queue;
 
 	private static final Logger LOG = LoggerFactory.getLogger(FaxServiceImpl.class);
 	
@@ -124,8 +126,8 @@ public class FaxServiceImpl implements FaxService {
 			
 			// put in queue instead of process right away
 			// faxJob = AsteriskFaxProcessor.process(faxJob);
-			
-			FaxQueue.getInstance().addJob(faxJob);
+
+			queue.addJob(faxJob);
 			
 			faxJob.setStatus(Status.QUEUED);
 			jobCache.put(faxJob.getJobId(), faxJob);
@@ -187,8 +189,8 @@ public class FaxServiceImpl implements FaxService {
 				
 				// put in queue instead of process right away
 				// faxJob = AsteriskFaxProcessor.process(faxJob);
-				
-				FaxQueue.getInstance().addJob(faxJob);
+
+				queue.addJob(faxJob);
 			} else {
 				// no more retries
 				LOG.warn("setJobStatus FaxJob exceeded max retries: jobId="+faxJob.getJobId()+", maxRetries="+faxJob.getMaxRetries());

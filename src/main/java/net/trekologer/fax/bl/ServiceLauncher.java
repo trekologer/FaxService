@@ -22,15 +22,18 @@
 package net.trekologer.fax.bl;
 
 import net.trekologer.fax.processor.AsteriskFaxWorker;
+import net.trekologer.fax.processor.FaxQueue;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Created by adb on 6/5/15.
  */
-@Component
+@Configuration
 public class ServiceLauncher {
 
     @Autowired
@@ -42,6 +45,11 @@ public class ServiceLauncher {
     public void init() {
         workerThread = new Thread(worker);
         workerThread.start();
+    }
+
+    @PreDestroy
+    public void shutdown() {
+
     }
 
 }
