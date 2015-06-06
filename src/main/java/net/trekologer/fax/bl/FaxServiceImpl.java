@@ -2,7 +2,7 @@
  * FaxServiceImpl.java
  * 
  * 
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  * 
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -33,24 +33,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import net.trekologer.fax.exception.ResourceNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.data.FaxJobStatus;
 import net.trekologer.fax.data.Status;
+import net.trekologer.fax.exception.ResourceNotFoundException;
 import net.trekologer.fax.exception.FaxServiceException;
 import net.trekologer.fax.processor.FaxQueue;
-import net.trekologer.fax.util.Constants;
 import net.trekologer.fax.util.FileConverter;
-import net.trekologer.fax.util.ServiceProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class FaxServiceImpl implements FaxService {
-	
+
+	@Value("${workfile.path:/tmp}")
+	private String workFilePath;
+
+	@Autowired
+	private FileConverter fileConverter;
+
+
 	private static final Logger LOG = LoggerFactory.getLogger(FaxServiceImpl.class);
 	
 	private static Map<String, FaxJob> jobCache = new ConcurrentHashMap<String, FaxJob>();
@@ -104,8 +109,8 @@ public class FaxServiceImpl implements FaxService {
 		
 		LOG.info("createJob Creating FaxJob jobId="+faxJob.getJobId());
 		
-		if(storeFile(fileInputStream, ServiceProperties.getString(Constants.WORK_FILE_PATH)+"/"+faxJob.getJobId())) {
-			faxJob = FileConverter.convertFaxFile(faxJob);
+		if(storeFile(fileInputStream, workFilePath+"/"+faxJob.getJobId())) {
+			faxJob = fileConverter.convertFaxFile(faxJob);
 			
 			if(faxJob.getConvertedFileName() == null) {
 				LOG.error("createJob Converting file failed for jobId="+faxJob.getJobId());

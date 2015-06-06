@@ -2,7 +2,7 @@
  * FaxQueue.java
  * 
  * 
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  * 
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -29,20 +29,20 @@ import org.slf4j.LoggerFactory;
 
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.exception.FaxServiceException;
-import net.trekologer.fax.util.Constants;
-import net.trekologer.fax.util.ServiceProperties;
+import org.springframework.beans.factory.annotation.Value;
 
 public class FaxQueue {
+
+	@Value("${queue.size:10}")
+	private int queueSize;
 
 	private static final Logger LOG = LoggerFactory.getLogger(FaxQueue.class);
 	
 	private static FaxQueue instance;
 	private static BlockingQueue<FaxJob> workQueue;
 	
-	private static final int DEFAULT_QUEUE_SIZE = 10;
-	
 	private FaxQueue() {
-		workQueue = new LinkedBlockingQueue<FaxJob>(ServiceProperties.getInt(Constants.FAX_QUEUE_SIZE, DEFAULT_QUEUE_SIZE));
+		workQueue = new LinkedBlockingQueue<FaxJob>(queueSize);
 	}
 	
 	public static FaxQueue getInstance() {
@@ -63,7 +63,7 @@ public class FaxQueue {
 			return workQueue.add(job);
 		} catch(IllegalStateException e) {
 			LOG.debug("addJob()", e);
-			LOG.error("Exception Occurred: "+e.getMessage());
+			LOG.error("Exception Occurred: " + e.getMessage());
 			// TODO -- make this a 503
 			throw new FaxServiceException(e.getMessage());
 		}
@@ -81,7 +81,7 @@ public class FaxQueue {
 		} catch(InterruptedException e) {
 			// if we are interrupted, we are shutting down
 			LOG.debug("takeJob()", e);
-			LOG.info("Exception Occurred: "+e.getMessage());
+			LOG.info("Exception Occurred: " + e.getMessage());
 			throw new FaxServiceException(e.getMessage());
 		}
 	}

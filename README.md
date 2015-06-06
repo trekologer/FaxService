@@ -1,12 +1,12 @@
 FaxService
 ==========
 
-A Java/Tomcat webservice to send faxes using Asterisk
+A Java webservice to send faxes using Asterisk
 
 
 ## Requirements:
- -   Java 7 + log4j & Jersey REST
- -   Tomcat 7
+ -   Java 7+
+ -   Gradle 2.4+
  -   Asterisk 1.8 + Fax For Asterisk
  -   Libreoffice 3.5
  -   Ghostscript 9.0
@@ -31,10 +31,10 @@ This is currently very rough. It was tested on an Ubuntu 12.04 system but no gua
 ## Instructions
  -   Install the requirements
  -   Configure Asterisk. See sample extensions.conf and sip.conf files in asterisk/
- -   Copy the files in script/ to somewhere that the tomcat user will be able execute them
- -   The faxservice.properties file in src/ needs to be updated with proper paths to Libreoffice, Ghostscript, and the above scrips. Update it now or you will need to do so after you build and install the WAR file and it is expanded.
- -   Build the WAR file
- -   Drop the WAR file into your Tomcat webapps directory
+ -   Copy the files in script/ to somewhere that the application user will be able execute them
+ -   The faxservice.properties file in src/main/conf needs to be updated with proper paths to Libreoffice, Ghostscript, and the above scrips.
+ -   Build the JAR using Gradle
+ -   Run the JAR file
 
 
 ## Planned Future Ehnancements

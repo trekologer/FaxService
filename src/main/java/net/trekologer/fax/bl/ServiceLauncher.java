@@ -1,8 +1,8 @@
 /**
- * Application.java
+ * ServiceLauncher.java
  *
  *
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  *
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,22 +19,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.trekologer.fax;
+package net.trekologer.fax.bl;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
+import net.trekologer.fax.processor.AsteriskFaxWorker;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 
 /**
- * Created by adb on 6/2/15.
+ * Created by adb on 6/5/15.
  */
-@SpringBootApplication
-public class Application {
+@Component
+public class ServiceLauncher {
 
-    public static void main(String[] args) {
+    @Autowired
+    private AsteriskFaxWorker worker;
 
-        ApplicationContext ctx = SpringApplication.run(Application.class, args);
+    private Thread workerThread;
+
+    @PostConstruct
+    public void init() {
+        workerThread = new Thread(worker);
+        workerThread.start();
     }
 
 }
