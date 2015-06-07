@@ -2,7 +2,7 @@
  * FaxServiceImpl.java
  * 
  * 
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  * 
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -33,21 +33,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.log4j.Logger;
-
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.data.FaxJobStatus;
 import net.trekologer.fax.data.Status;
+import net.trekologer.fax.exception.ResourceNotFoundException;
 import net.trekologer.fax.exception.FaxServiceException;
 import net.trekologer.fax.processor.FaxQueue;
-import net.trekologer.fax.util.Constants;
 import net.trekologer.fax.util.FileConverter;
-import net.trekologer.fax.util.ServiceProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class FaxServiceImpl implements FaxService {
-	
-	private static final Logger LOG = Logger.getLogger(FaxServiceImpl.class);
+
+	@Value("${workfile.path:/tmp}")
+	private String workFilePath;
+
+	@Autowired
+	private FileConverter fileConverter;
+
+	@Autowired
+	private FaxQueue queue;
+
+	private static final Logger LOG = LoggerFactory.getLogger(FaxServiceImpl.class);
 	
 	private static Map<String, FaxJob> jobCache = new ConcurrentHashMap<String, FaxJob>();
 
@@ -82,7 +93,7 @@ public class FaxServiceImpl implements FaxService {
 		
 		if(job == null) {
 			LOG.error("getJob No job exists in jobCache with jobId="+jobId);
-			throw new FaxServiceException("Not Found", 404);
+			throw new ResourceNotFoundException("Unknown job "+jobId);
 		}
 		
 		LOG.debug("getJob returning: job=["+job+"]");
@@ -100,13 +111,13 @@ public class FaxServiceImpl implements FaxService {
 		
 		LOG.info("createJob Creating FaxJob jobId="+faxJob.getJobId());
 		
-		if(storeFile(fileInputStream, ServiceProperties.getString(Constants.WORK_FILE_PATH)+"/"+faxJob.getJobId())) {
-			faxJob = FileConverter.convertFaxFile(faxJob);
+		if(storeFile(fileInputStream, workFilePath+"/"+faxJob.getJobId())) {
+			faxJob = fileConverter.convertFaxFile(faxJob);
 			
 			if(faxJob.getConvertedFileName() == null) {
 				LOG.error("createJob Converting file failed for jobId="+faxJob.getJobId());
 				faxJob.setStatus(Status.FAILED);
-				throw new FaxServiceException("Internal Server Error", 500);
+				throw new FaxServiceException("Could not convert file");
 			}
 			
 			jobCache.put(faxJob.getJobId(), faxJob);
@@ -115,8 +126,8 @@ public class FaxServiceImpl implements FaxService {
 			
 			// put in queue instead of process right away
 			// faxJob = AsteriskFaxProcessor.process(faxJob);
-			
-			FaxQueue.getInstance().addJob(faxJob);
+
+			queue.addJob(faxJob);
 			
 			faxJob.setStatus(Status.QUEUED);
 			jobCache.put(faxJob.getJobId(), faxJob);
@@ -126,7 +137,7 @@ public class FaxServiceImpl implements FaxService {
 		} else {
 			LOG.error("createJob Storing file failed for jobId="+faxJob.getJobId());
 			faxJob.setStatus(Status.FAILED);
-			throw new FaxServiceException("Internal Server Error", 500);
+			throw new FaxServiceException("Could not store file");
 		}
 		
 		LOG.debug("createJob returning: faxJob=["+faxJob+"]");
@@ -140,7 +151,7 @@ public class FaxServiceImpl implements FaxService {
 		
 		if(jobCache.get(jobId) == null) {
 			LOG.error("No job exists in jobCache with jobId="+jobId);
-			throw new FaxServiceException("Not Found", 404);
+			throw new ResourceNotFoundException("Unknown job "+jobId);
 		}
 		jobCache.remove(jobId);
 		
@@ -155,7 +166,7 @@ public class FaxServiceImpl implements FaxService {
 		
 		if(faxJob == null) {
 			LOG.error("setJobStatus Unknown jobId="+faxJobStatus.getJobId());
-			throw new FaxServiceException("Not Found", 404);
+			throw new ResourceNotFoundException("Unknown job "+faxJobStatus.getJobId());
 		}
 		
 		faxJob.setUpdatedTime(Calendar.getInstance());
@@ -178,8 +189,8 @@ public class FaxServiceImpl implements FaxService {
 				
 				// put in queue instead of process right away
 				// faxJob = AsteriskFaxProcessor.process(faxJob);
-				
-				FaxQueue.getInstance().addJob(faxJob);
+
+				queue.addJob(faxJob);
 			} else {
 				// no more retries
 				LOG.warn("setJobStatus FaxJob exceeded max retries: jobId="+faxJob.getJobId()+", maxRetries="+faxJob.getMaxRetries());
@@ -206,8 +217,8 @@ public class FaxServiceImpl implements FaxService {
 			os.close();
 			
 		} catch(IOException e) {
-			LOG.fatal(e);
-			LOG.fatal("Unable to store file at location: "+location+", reason: "+e.getMessage());
+			LOG.error("storeFile()", e);
+			LOG.error("Unable to store file at location: " + location + ", reason: " + e.getMessage());
 			return false;
 		}
 		

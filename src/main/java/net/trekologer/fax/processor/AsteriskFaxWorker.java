@@ -2,7 +2,7 @@
  * AsteriskFaxWorker.java
  * 
  * 
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  * 
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -27,33 +27,57 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.trekologer.fax.data.FaxJob;
-import net.trekologer.fax.util.Constants;
-import net.trekologer.fax.util.ServiceProperties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class AsteriskFaxWorker implements Runnable {
 
-	private static Logger LOG = Logger.getLogger(AsteriskFaxWorker.class);
+	@Autowired
+	private AsteriskFaxProcessor processor;
+
+	@Autowired
+	private FaxQueue queue;
+
+	@Value("${asterisk.script.path:/opt/faxservice/scripts}")
+	private String asteriskScriptPath;
+
+	@Value("${asterisk.script.channels:core_show_channels.sh}")
+	private String asteriskChannelsCommand;
+
+	@Value("${asterisk.script.licenses:fax_show_licenses.sh}")
+	private String asteriskFaxLicensesCommand;
+
+	@Value("${asterisk.script.sessions:fax_show_sessions.sh}")
+	private String asteriskFaxSessionsCommand;
+
+	@Value("${asterisk.license.wait:60000}")
+	private int asteriskLicenseWaitSleepTime;
+
+	@Value("${asterisk.submit.wait:20000}")
+	private int asteriskSubmitSleepTime;
+
+	private static Logger LOG = LoggerFactory.getLogger(AsteriskFaxWorker.class);
 	
 	private boolean run = true;
-	
-	private static final int DEEFAULT_LICENSE_WAIT_SLEEP_TIME = 60000;
-	private static final int DEFAULT_SUMBIT_SLEEP_TIME = 20000;
 	
 	@Override
 	public void run() {
 		LOG.info("Startup");
 		
-		while(run) {
-			LOG.debug("Waiting for job");
+		while(true) {
+			LOG.info("Waiting for job");
 			
 			FaxJob job = null;
 			try {
-				job = FaxQueue.getInstance().takeJob();
+				job = queue.takeJob();
 			} catch(Exception e) {
-				LOG.error(e);
-				LOG.error("Exception occurred when taking job: "+e.getMessage());
+				LOG.debug("run()", e);
+				LOG.error("Exception occurred when taking job: " + e.getMessage());
 			}
 			
 			boolean processed = false;
@@ -66,7 +90,7 @@ public class AsteriskFaxWorker implements Runnable {
 				LOG.debug("Fax licenses in use: "+currentFaxSessions+"/"+faxLicenses+", channels in use: "+currentChannels);
 				
 				if((faxLicenses > currentFaxSessions) && (faxLicenses > currentChannels)) {
-					AsteriskFaxProcessor.process(job);
+					processor.process(job);
 					
 					// we've given the processor the job
 					processed = true;
@@ -74,9 +98,9 @@ public class AsteriskFaxWorker implements Runnable {
 					LOG.debug("All fax licenses in use, waiting for one to become free");
 					
 					try {
-						Thread.sleep(ServiceProperties.getInt(Constants.ASTERISK_LICENSE_WAIT_SLEEP_TIME, DEEFAULT_LICENSE_WAIT_SLEEP_TIME));
+						Thread.sleep(asteriskLicenseWaitSleepTime);
 					} catch (InterruptedException e) {
-						LOG.debug(e);
+						LOG.debug("run()", e);
 					}
 					
 				}
@@ -86,9 +110,9 @@ public class AsteriskFaxWorker implements Runnable {
 			try {
 				// this is to prevent submitting another job while asterisk
 				// is still setting up call for current job
-				Thread.sleep(ServiceProperties.getInt(Constants.ASTERISK_SUBMIT_SLEEP_TIME, DEFAULT_SUMBIT_SLEEP_TIME));
+				Thread.sleep(asteriskSubmitSleepTime);
 			} catch(InterruptedException e) {
-				LOG.debug(e);
+				LOG.debug("run()", e);
 			}
 			
 		}
@@ -102,8 +126,8 @@ public class AsteriskFaxWorker implements Runnable {
 		int count = 0;
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_SCRIPT_PATH)).append("/");
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_FAX_LICENSES_COMMAND));
+		sb.append(asteriskScriptPath).append("/");
+		sb.append(asteriskFaxLicensesCommand);
 		
 		Pattern pattern = Pattern.compile("\\d+");
 		
@@ -128,8 +152,8 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
-			LOG.error("getFaxLicenses exception occurred: "+e.getMessage());
+			LOG.debug("getFaxLicenses()", e);
+			LOG.error("getFaxLicenses exception occurred: " + e.getMessage());
 		}
 		
 		LOG.debug("getFaxLicenses returning count="+count);
@@ -140,8 +164,8 @@ public class AsteriskFaxWorker implements Runnable {
 		int count = 0;
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_SCRIPT_PATH)).append("/");
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_FAX_SESSIONS_COMMAND));
+		sb.append(asteriskScriptPath).append("/");
+		sb.append(asteriskFaxSessionsCommand);
 		
 		Pattern pattern = Pattern.compile("\\d+");
 		
@@ -166,8 +190,8 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
-			LOG.error("getFaxSessions exception occurred: "+e.getMessage());
+			LOG.debug("getFaxSessions()", e);
+			LOG.error("getFaxSessions exception occurred: " + e.getMessage());
 		}
 		
 		LOG.debug("getFaxSessions returning count="+count);
@@ -178,8 +202,8 @@ public class AsteriskFaxWorker implements Runnable {
 		int count = 0;
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_SCRIPT_PATH)).append("/");
-		sb.append(ServiceProperties.getString(Constants.ASTERISK_CHANNELS_COMMAND));
+		sb.append(asteriskScriptPath).append("/");
+		sb.append(asteriskChannelsCommand);
 		
 		Pattern pattern = Pattern.compile("\\d+");
 		
@@ -204,8 +228,8 @@ public class AsteriskFaxWorker implements Runnable {
 			
 			br.close();
 		} catch(Exception e) {
-			LOG.error(e);
-			LOG.error("getChannels exception occurred: "+e.getMessage());
+			LOG.debug("getChannels()", e);
+			LOG.error("getChannels exception occurred: " + e.getMessage());
 		}
 		
 		LOG.debug("getChannels returning count="+count);

@@ -2,7 +2,7 @@
  * FileConverter.java
  * 
  * 
- * Copyright (c) 2013-2014 Andrew D. Bucko <adb@trekologer.net>
+ * Copyright (c) 2013-2015 Andrew D. Bucko <adb@trekologer.net>
  * 
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -30,12 +30,30 @@ import org.apache.log4j.Logger;
 
 import net.trekologer.fax.data.FaxJob;
 import net.trekologer.fax.data.Status;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class FileConverter {
-	
+
+	@Value("${workfile.path:/tmp}")
+    private String workFilePath;
+
+    @Value("${file.extension.tiff:tiff}")
+    private String fileExtensionTiff;
+
+    @Value("${file.extension.pdf:pdf}")
+    private String fileExtensionPdf;
+
+    @Value("${libreoffice.path:/usr/bin/libreoffice}")
+    private String libreOfficePath;
+
+    @Value("${ghostscript.path:/usr/bin/gs}")
+    private String ghostScriptPath;
+
 	private static Logger LOG = Logger.getLogger(FileConverter.class);
 	
-	public static FaxJob convertFaxFile(FaxJob faxJob) {
+	public FaxJob convertFaxFile(FaxJob faxJob) {
 		faxJob.setConvertedFileName(convertToTiff(faxJob.getJobId()));
 		
 		if (faxJob.getConvertedFileName() != null) {
@@ -46,25 +64,25 @@ public class FileConverter {
 		return faxJob;
 	}
 	
-	private static String convertToTiff(String fileName) {
+	private String convertToTiff(String fileName) {
 		
-		File workDir = new File(ServiceProperties.getString(Constants.WORK_FILE_PATH));
-		String outputFileName = fileName + "." + ServiceProperties.getString(Constants.TIFF_FILE_EXTENSION);
+		File workDir = new File(workFilePath);
+		String outputFileName = fileName + "." + fileExtensionTiff;
 		
 		StringBuilder pdfConvertCommand = new StringBuilder();
 		pdfConvertCommand.append("/bin/sh ");
-		pdfConvertCommand.append(ServiceProperties.getString(Constants.LIBREOFFICE_PATH));
+		pdfConvertCommand.append(libreOfficePath);
 		pdfConvertCommand.append(" --headless");
 		pdfConvertCommand.append(" --invisible");
 		pdfConvertCommand.append(" --convert-to pdf");
-		pdfConvertCommand.append(" --outdir ").append(ServiceProperties.getString(Constants.WORK_FILE_PATH));
+		pdfConvertCommand.append(" --outdir ").append(workFilePath);
 		// providing workDir parameter to exec() should mean I don't need to specify the full path for each file
-		pdfConvertCommand.append(" ").append(ServiceProperties.getString(Constants.WORK_FILE_PATH)).append("/").append(fileName);
+		pdfConvertCommand.append(" ").append(workFilePath).append("/").append(fileName);
 		// but it doesn't seem to work...
 		// pdfConvertCommand.append(" ").append(fileName);
 		
 		StringBuilder tiffConvertCommand = new StringBuilder();
-		tiffConvertCommand.append(ServiceProperties.getString(Constants.GHOSTSCRIPT_PATH));
+		tiffConvertCommand.append(ghostScriptPath);
 		tiffConvertCommand.append(" -dBATCH");
 		tiffConvertCommand.append(" -dNOPAUSE");
 		tiffConvertCommand.append(" -sDEVICE=tiffg3");
@@ -74,10 +92,10 @@ public class FileConverter {
 		tiffConvertCommand.append(" -g1728x2156");
 		// providing workDir parameter to exec() should mean I don't need to specify the full path for each file
 		tiffConvertCommand.append(" -sOutputFile=");
-		tiffConvertCommand.append(ServiceProperties.getString(Constants.WORK_FILE_PATH)).append("/").append(outputFileName);
+		tiffConvertCommand.append(workFilePath).append("/").append(outputFileName);
 		tiffConvertCommand.append(" ");
-		tiffConvertCommand.append(ServiceProperties.getString(Constants.WORK_FILE_PATH)).append("/");
-		tiffConvertCommand.append(fileName).append(".").append(ServiceProperties.getString(Constants.PDF_FILE_EXTENSION));
+		tiffConvertCommand.append(workFilePath).append("/");
+		tiffConvertCommand.append(fileName).append(".").append(fileExtensionPdf);
 		
 		try {
 			LOG.debug("Running pdfConvert command: "+pdfConvertCommand.toString());

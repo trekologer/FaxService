@@ -21,40 +21,28 @@
 
 package net.trekologer.fax.exception;
 
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public class FaxServiceException extends Exception {
+@ResponseStatus(value= HttpStatus.INTERNAL_SERVER_ERROR, reason="Internal Error")
+public class FaxServiceException extends RuntimeException {
 
 	private static final long serialVersionUID = 5998156674609397145L;
-	private int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 	
 	public FaxServiceException() {
 		super();
 	}
 	
-	public FaxServiceException(Throwable cause, String message) {
+	public FaxServiceException(String message, Throwable cause) {
 		super(message, cause);
 	}
 	
 	public FaxServiceException(String message) {
 		super(message);
 	}
-	
-	public FaxServiceException(String message, int status) {
-		super(message);
-		setStatus(status);
-	}
-	
+
 	public FaxServiceException(Exception e) {
 		super(e);
-	}
-	
-	public int getStatus() {
-		return status;
-	}
-	
-	public void setStatus(int status) {
-		this.status = status;
 	}
 	
 }
