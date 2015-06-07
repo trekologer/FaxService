@@ -39,7 +39,6 @@ This is currently very rough. It was tested on an Ubuntu 12.04 system but no gua
 
 ## Planned Future Ehnancements
  -  Front end
- -  Proper build script
  -  Incoming faxes
 
 
