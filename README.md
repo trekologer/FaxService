@@ -21,7 +21,7 @@ To send a fax, perform a multipart HTTP POST to the URI FaxService/rest/fax with
  -   toPhoneNumber: the phone number to send to
  -   file: a document file that Libreoffice can understand
 
-Once submitted, an XML will be returned containing an ID and status of the fax job (among other things). To check the status of a previously-submitted job, perform an HTTP GET on the URI FaxService/rest/fax/{jobId}. A job can be canceled by performing an HTTP DELETE on the same URI.
+Once submitted, a JSON will be returned containing an ID and status of the fax job (among other things). To check the status of a previously-submitted job, perform an HTTP GET on the URI FaxService/rest/fax/{jobId}. A job can be canceled by performing an HTTP DELETE on the same URI.
 
 Because I have assumed that you will have a limited FFA license (such as 1 port), the FaxService will check for an available port before trying to send. 
 
@@ -30,16 +30,15 @@ This is currently very rough. It was tested on an Ubuntu 12.04 system but no gua
 
 ## Instructions
  -   Install the requirements
- -   Configure Asterisk. See sample extensions.conf and sip.conf files in asterisk/
- -   Copy the files in script/ to somewhere that the application user will be able execute them
- -   The faxservice.properties file in src/main/conf needs to be updated with proper paths to Libreoffice, Ghostscript, and the above scrips.
+ -   Configure Asterisk. See sample extensions.conf and sip.conf files in src/main/asterisk/
+ -   Copy the files in src/main/script/ to somewhere that the application user will be able execute them
+ -   The application.properties file in src/main/conf needs to be updated with proper paths to Libreoffice, Ghostscript, and the above scrips.
  -   Build the JAR using Gradle
  -   Run the JAR file
 
 
 ## Planned Future Ehnancements
  -  Front end
- -  Put configuration file somewhere other than the WAR file
  -  Proper build script
  -  Incoming faxes
 
